@@ -4,7 +4,35 @@
 #include <math.h> //only used for sqrt and pow cause im lazy
 #include <Windows.h>
 #include <mmsystem.h>
+//Global variables
 
+bool drawAxis = true;
+bool blackAndWhite = false;
+char drawMode = 'w';
+bool music = true;
+bool dancing = false;
+
+int width = 800;
+int height = 600;
+
+
+
+double cameraSpeed = 1;
+double danceTheta = 0;
+
+long double theta = 0;
+long double phi = 3.14 / 2;
+
+int cameraMode = 4;
+
+double cameraRadius = 5;
+long double cameraX = 5;
+long double cameraY = 0;
+long double cameraZ = 0;
+
+long double cameraLookX = 0;
+long double cameraLookY = 0;
+long double cameraLookZ = -1;
 
 //needs to be before variables because no hoist
 #pragma region class definitions
@@ -56,9 +84,6 @@ public:
 		z = c;
 	}
 };
-
-
-
 
 class box {
 public:
@@ -160,18 +185,7 @@ public:
 
 	}
 };
-#pragma endregion
 
-
-//Global variables
-char drawMode = 'w'; 
-bool drawAxis = true; 
-bool blackAndWhite = false;
-bool music = true;
-bool dancing = false;
-
-int width = 800;
-int height = 600;
 
 vector3d headColor(1, 1, 0);
 vector3d torsoColor(0, 0, 0.5);
@@ -180,20 +194,71 @@ vector3d leftArmColor(1, 1, 0);
 vector3d rightLegColor(0, 0.75, 0);
 vector3d leftLegColor(0, 0.75, 0);
 
-double cameraRadius = 5;
-double danceTheta = 0;
 
-long double theta = 0;
-long double phi = 3.14/2;
+class robot {
+public:
+	robot(double x, double y, double z, double saturation) {
+		// robot primatives
+		!blackAndWhite ? glColor3f(headColor.x, headColor.y, headColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
+		box head(-0.5+x, -0.5+y, -0.5+z, 1, 1, 1, drawMode);
 
-long double cameraX = 5;
-long double cameraY = 0;
-long double cameraZ = 0;
+		saturation = sqrt(pow(torsoColor.x, 2) + pow(torsoColor.y, 2) + pow(torsoColor.z, 2));
+		!blackAndWhite ? glColor3f(torsoColor.x, torsoColor.y, torsoColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
+		box torso(-1+x, -2.5+y, -0.5+z, 2, 2, 1, drawMode);
 
-long double cameraChangeX = 0;
-long double cameraChangeY = 0;
-long double cameraChangeZ = 0;
 
+		saturation = sqrt(pow(rightArmColor.x, 2) + pow(rightArmColor.y, 2) + pow(rightArmColor.z, 2));
+		!blackAndWhite ? glColor3f(rightArmColor.x, rightArmColor.y, rightArmColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
+		box rightArm(-2+x, (!dancing ? -2.5 : sin(danceTheta))+y, -0.5+z, 1, 2, 1, drawMode);
+
+		saturation = sqrt(pow(leftArmColor.x, 2) + pow(leftArmColor.y, 2) + pow(leftArmColor.z, 2));
+		!blackAndWhite ? glColor3f(leftArmColor.x, leftArmColor.y, leftArmColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
+		box leftArm(1+x, (!dancing ? -2.5 : cos(danceTheta))+y, -0.5+z, 1, 2, 1, drawMode);
+
+		saturation = sqrt(pow(rightLegColor.x, 2) + pow(rightLegColor.y, 2) + pow(rightLegColor.z, 2));
+		!blackAndWhite ? glColor3f(rightLegColor.x, rightLegColor.y, rightLegColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
+		box rigtLeg(-1+x, -4.5+y, -0.5+z, 1, 2, 1, drawMode);
+
+		saturation = sqrt(pow(leftLegColor.x, 2) + pow(leftLegColor.y, 2) + pow(leftLegColor.z, 2));
+		!blackAndWhite ? glColor3f(leftLegColor.x, leftLegColor.y, leftLegColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
+		box leftLeg(0+x, -4.5+y, -0.5+z, 1, 2, 1, drawMode);
+	}
+};
+
+
+#pragma endregion
+
+
+
+void handleCamera(int cameraMode) {
+	switch (cameraMode) {
+	case 1:
+		cameraLookX = 1 * sin(phi) * cos(theta);
+		cameraLookZ = 1 * sin(phi) * sin(theta);
+		cameraLookY = 1 * cos(phi);
+
+		glLoadIdentity();
+		gluPerspective(100, (double)width / height, 0, 100);
+		gluLookAt(cameraX, cameraY, cameraZ, cameraLookX + cameraX, cameraLookY + cameraY, cameraLookZ + cameraZ, 0, 1, 0);
+		glutPostRedisplay();
+		
+		break;
+	case 4:
+		cameraX = cameraRadius * sin(phi) * cos(theta);
+		cameraZ = cameraRadius * sin(phi) * sin(theta);
+		cameraY = cameraRadius * cos(phi);
+
+		glLoadIdentity();
+		gluPerspective(100, (double)width / height, 0, 100);
+		gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
+		glutPostRedisplay();
+		break;
+
+	}
+
+
+	
+}
 
 
 //this creates shapes and sends them to be displayed
@@ -201,37 +266,16 @@ void MyDisplay() {
 	
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-	
 
 	axis origin(drawAxis);
 	double saturation;
 	saturation = sqrt(pow(headColor.x, 2) + pow(headColor.y, 2) + pow(headColor.z, 2));
-	// robot primatives
-	!blackAndWhite ? glColor3f(headColor.x, headColor.y, headColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
-	box head(-0.5, -0.5, -0.5, 1, 1, 1, drawMode);
-
-	saturation = sqrt(pow(torsoColor.x, 2) + pow(torsoColor.y, 2) + pow(torsoColor.z, 2));
-	!blackAndWhite ? glColor3f(torsoColor.x, torsoColor.y, torsoColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
-	box torso(-1, -2.5, -0.5, 2, 2, 1, drawMode);
-
-
-	saturation = sqrt(pow(rightArmColor.x, 2) + pow(rightArmColor.y, 2) + pow(rightArmColor.z, 2));
-	!blackAndWhite ? glColor3f(rightArmColor.x, rightArmColor.y, rightArmColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
-	box rightArm(-2, (!dancing ? -2.5 : sin(danceTheta)), -0.5, 1, 2, 1, drawMode);
-
-	saturation = sqrt(pow(leftArmColor.x, 2) + pow(leftArmColor.y, 2) + pow(leftArmColor.z, 2));
-	!blackAndWhite ? glColor3f(leftArmColor.x, leftArmColor.y, leftArmColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
-	box leftArm(1, (!dancing ? -2.5 : cos(danceTheta)), -0.5, 1, 2, 1, drawMode);
-
-	saturation = sqrt(pow(rightLegColor.x, 2) + pow(rightLegColor.y, 2) + pow(rightLegColor.z, 2));
-	!blackAndWhite ? glColor3f(rightLegColor.x, rightLegColor.y, rightLegColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
-	box rigtLeg(-1, -4.5, -0.5, 1, 2, 1, drawMode);
-
-	saturation = sqrt(pow(leftLegColor.x, 2) + pow(leftLegColor.y, 2) + pow(leftLegColor.z, 2));
-	!blackAndWhite ? glColor3f(leftLegColor.x, leftLegColor.y, leftLegColor.z) : glColor3f(saturation, saturation, saturation); // R,G,B
-	box leftLeg(0, -4.5, -0.5, 1, 2, 1, drawMode);
-
 	
+	robot steve(0.0, 0.0, 0.0, saturation);
+	robot jim(5.0, 0.0, 5.0, saturation);
+	robot fred(-5.0, 0.0, 5.0, saturation);
+	robot dan(5.0, 0.0, -5.0, saturation);
+	robot ryan(-5.0, 0.0, -5.0, saturation);
 	// end drawing
 	glFlush();
 }
@@ -407,6 +451,106 @@ public:
 	}
 };
 
+void processSpecialKeys(int key, int x, int y) {
+
+	switch (key) {
+		case GLUT_KEY_UP:
+			//move camera
+			cameraX += cameraSpeed * cameraLookX;
+			cameraY += cameraSpeed * cameraLookY;
+			cameraZ += cameraSpeed * cameraLookZ;
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_DOWN:
+			//move camera
+			cameraX -= cameraSpeed * cameraLookX;
+			cameraY -= cameraSpeed * cameraLookY;
+			cameraZ -= cameraSpeed * cameraLookZ;
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_RIGHT:
+			//move camera
+			if (cameraLookX < 0 && cameraLookZ < 0) {
+				cameraZ += cameraSpeed * cameraLookX;
+				cameraX -= cameraSpeed * cameraLookZ;
+			}
+			else if (cameraLookX >= 0 && cameraLookZ < 0) { 
+				cameraZ += cameraSpeed * cameraLookX;
+				cameraX -= cameraSpeed * cameraLookZ;
+			}
+			else if (cameraLookX < 0 && cameraLookZ >= 0) { 
+				cameraZ += cameraSpeed * cameraLookX;
+				cameraX -= cameraSpeed * cameraLookZ;
+			}
+			else if (cameraLookX >= 0 && cameraLookZ >= 0) { 
+				cameraZ += cameraSpeed * cameraLookX;
+				cameraX -= cameraSpeed * cameraLookZ;
+			}
+
+
+			std::cout << "coords: " << cameraX << " " << cameraZ << "\n";
+			std::cout << "changes: " << cameraSpeed * cameraLookX << " " << cameraSpeed * cameraLookZ << "\n";
+			
+
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_LEFT:
+			//move camera
+			if (cameraLookX < 0 && cameraLookZ < 0) {
+				cameraZ -= cameraSpeed * cameraLookX;
+				cameraX += cameraSpeed * cameraLookZ;
+			}
+			else if (cameraLookX >= 0 && cameraLookZ < 0) {
+				cameraZ -= cameraSpeed * cameraLookX;
+				cameraX += cameraSpeed * cameraLookZ;
+			}
+			else if (cameraLookX < 0 && cameraLookZ >= 0) {
+				cameraZ -= cameraSpeed * cameraLookX;
+				cameraX += cameraSpeed * cameraLookZ;
+			}
+			else if (cameraLookX >= 0 && cameraLookZ >= 0) {
+				cameraZ -= cameraSpeed * cameraLookX;
+				cameraX += cameraSpeed * cameraLookZ;
+			}
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_F1:
+			//First Person Camera mode
+			cameraX = 5;
+			cameraY = 0;
+			cameraZ = 0;
+
+			cameraLookX = 1;
+			cameraLookY = 0;
+			cameraLookZ = 0;
+			cameraMode = 1;
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_F2:
+			//First person + mirror mode
+			cameraMode = 2;
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_F3:
+			//whole scene mode
+			cameraMode = 3;
+			handleCamera(cameraMode);
+			break;
+		case GLUT_KEY_F4:
+			//orbit camera mode
+			cameraX = 5;
+			cameraY = 0;
+			cameraZ = 0;
+
+			cameraLookX = 0;
+			cameraLookY = 0;
+			cameraLookZ = 0;
+			cameraMode = 4;
+			handleCamera(cameraMode);
+			break;
+	}
+}
+
 void processKeys(unsigned char key, int x, int y) {
 	switch (key) {
 	case 'p':
@@ -432,7 +576,6 @@ void processKeys(unsigned char key, int x, int y) {
 		PlaySoundW(TEXT("speech.wav"), NULL, SND_FILENAME | SND_ASYNC);
 		std::cout << "Robot speaking" << std::endl;
 		break;
-
 	case 'd':
 		dancing = !dancing;
 		if (music) {
@@ -450,37 +593,29 @@ void processKeys(unsigned char key, int x, int y) {
 	case 'i':
 		//rotate camera
 		phi -= 0.1;
+		handleCamera(cameraMode);
 		break;
 	case 'j':
 		//rotate camera
 		theta -= 0.1;
+		handleCamera(cameraMode);
 		break;
 	case 'k':
 		//rotate camera
 		phi += 0.1;
+		handleCamera(cameraMode);
 		break;
 	case 'l':
 		//rotate camera
 		theta += 0.1;
+		handleCamera(cameraMode);
 		break;
+	
 	case 27:
 		exit(0);
 		break;
 	}
 	
-	cameraChangeX = abs(cameraX - cameraRadius * sin(phi) * cos(theta));
-	cameraChangeY = abs(cameraY - cameraRadius * cos(phi));
-	cameraChangeZ = abs(cameraZ - cameraRadius * sin(phi) * sin(theta));
-
-
-	cameraX = cameraRadius * sin(phi) * cos(theta);
-	cameraZ = cameraRadius * sin(phi) * sin(theta);
-	cameraY = cameraRadius * cos(phi);
-
-	glLoadIdentity();
-	gluPerspective(100, (double)width / height, 0, 100);
-	gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
-	glutPostRedisplay();
 }
 
 void processMouse(int button, int state, int x, int y) {
@@ -500,33 +635,24 @@ void processMouse(int button, int state, int x, int y) {
 		cameraRadius += .1;
 	}
 	
+	handleCamera(cameraMode);
 
-
-	cameraChangeX = abs(cameraX - cameraRadius * sin(phi) * cos(theta));
-	cameraChangeY = abs(cameraY - cameraRadius * cos(phi));
-	cameraChangeZ = abs(cameraZ - cameraRadius * sin(phi) * sin(theta));
-
-
-	cameraX = cameraRadius * sin(phi) * cos(theta);
-	cameraZ = cameraRadius * sin(phi) * sin(theta);
-	cameraY = cameraRadius * cos(phi);
-
-	glLoadIdentity();
-	gluPerspective(100, (double)width / height, 0, 100);
-	gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
-	glutPostRedisplay();
+	
 }
 
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB); // RGB mode
+	
 	glutInitWindowSize(width, height); // window size
 	glutInitWindowPosition(0, 0);
 	glutCreateWindow("Dakota Deets KSUID#811214188");
 	glClearColor(0.0, 0.0, 0.0, 1.0); 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	
 	gluPerspective(100, (double)width / height, 0, 100);
+	
 
 	
 	gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
@@ -547,14 +673,14 @@ int main(int argc, char** argv) {
 		<< "k: rotate camera right\n"
 		<< "l: rotate camera left\n"
 		<< "SCROLL WHEEL: zoom in and out\n\n\n"
-		//TALKING BONUS SECTION
-		<< "BONUS!!!\n"
 		<< "t: speak\n"
 		<< "d: dance\n";
 
 	glutDisplayFunc(MyDisplay); // call the drawing function
 	glutKeyboardFunc(processKeys);
+	glutSpecialFunc(processSpecialKeys);
 	glutMouseFunc(processMouse);
+	
 	glutMainLoop();
 	return 0;
 }
