@@ -760,7 +760,8 @@ void processSpecialKeys(int key, int x, int y) {
 
 			cameraLookX = 1;
 			cameraLookY = 0;
-			cameraLookZ = 0  ;
+			cameraLookZ = 0;
+			cameraMode1 = true;
 			cameraMode2 = !cameraMode2;
 			cameraMode4 = false;
 			handleCamera();
