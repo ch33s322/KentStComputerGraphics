@@ -4,9 +4,7 @@
 #include <math.h> //only used for sqrt and pow cause im lazy
 #include <Windows.h>
 #include <mmsystem.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+
 #include <string>
 #include <stdio.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -30,6 +28,8 @@ int width = 800;
 int height = 600;
 
 bool enemyMotion = false;
+
+bool gameEnded = false;
 
 int moveDir = 1;
 
@@ -667,6 +667,18 @@ void printBitmapString(void* font, std::string s)
 }
 
 
+const char* conditionalText() {
+	if (gameEnded && score >= 100) {
+		return "       CONGRATS YOU WIN!!!";
+	}
+	else if(gameEnded && score < 100) {
+		return "       AW YOU LOST";
+	}
+	else {
+		return "       shoot start a game, go for a high score beat 100 to win!";
+	}
+}
+
 void drawText(int width, int height) {
 	// Disable textures before drawing bitmap text
 	glDisable(GL_TEXTURE_2D);
@@ -675,8 +687,8 @@ void drawText(int width, int height) {
 	glColor3d(1.0, 0.0, 0.0);
 	glRasterPos2i(10, height - 10); // Adjust Y so it appears in the lower part of the top panel
 
-	std::string gameTimeString = "time left: " + std::to_string(gameTime);
-	std::string gameScore = "score: " + std::to_string(score);
+	std::string gameTimeString = "time left: " + std::to_string(gameTime) + conditionalText();
+	std::string gameScore = "score: " + std::to_string(score) + "           shoot robots for 10 pts each.";
 	std::string bSpeed = "bulletSpeed: " + std::to_string(bulletSpeed);
 
 	void* font = GLUT_BITMAP_9_BY_15;
@@ -892,7 +904,7 @@ void handleCamera() {
 }
 
 void mouseMotion(int x, int y) {
-	if (leftDown) {
+	if (leftDown && cameraMode4) {
 		double xoffset = x - lastX;
 		double yoffset = lastY - y;  // reversed: y-coordinates go top to bottom
 		lastX = x;
@@ -922,6 +934,7 @@ void gameTimer(int i) {
 	}
 	else {
 		PlaySoundW(TEXT("gameEndMessage.wav"), NULL, SND_FILENAME | SND_ASYNC);
+		gameEnded = true;
 		glutTimerFunc(6000, gameEnd, 0);
 	}
 }
@@ -1138,6 +1151,9 @@ public:
 };
 
 void processSpecialKeys(int key, int x, int y) {
+	if (!gameEnded) {
+
+
 		switch (key) {
 		case GLUT_KEY_UP:
 			//move camera
@@ -1206,12 +1222,13 @@ void processSpecialKeys(int key, int x, int y) {
 			handleCamera();
 			break;
 		case GLUT_KEY_F4:
-			if (shadeMode == 0) { shadeMode = 1;}
+			if (shadeMode == 0) { shadeMode = 1; }
 			else { shadeMode = 0; }
 
 			handleCamera();
 			break;
 		}
+	}
 	
 }
 
@@ -1277,18 +1294,19 @@ void processKeys(unsigned char key, int x, int y) {
 		}
 		break;
 	case ' ':
-		// Shoot at look directrion
-		bulletPos[0] = cameraX;
-		bulletPos[1] = cameraY;
-		bulletPos[2] = cameraZ;
-		PlaySoundW(TEXT("pew.wav"), NULL, SND_FILENAME | SND_ASYNC);
-		shoot(cameraLookX, cameraLookY, cameraLookZ);
-		started = true;
-		if (gameTime == 0) {
-			gameTime = 30;
-			glutTimerFunc(1000, gameTimer, 0);
+		if (!gameEnded) {
+			// Shoot at look directrion
+			bulletPos[0] = cameraX;
+			bulletPos[1] = cameraY;
+			bulletPos[2] = cameraZ;
+			PlaySoundW(TEXT("pew.wav"), NULL, SND_FILENAME | SND_ASYNC);
+			shoot(cameraLookX, cameraLookY, cameraLookZ);
+			started = true;
+			if (gameTime == 0) {
+				gameTime = 30;
+				glutTimerFunc(1000, gameTimer, 0);
+			}
 		}
-
 		break;
 	case 27:
 		paused = true;
@@ -1309,13 +1327,13 @@ void processMouse(int button, int state, int x, int y) {
 		//blackAndWhite = !blackAndWhite;
 		if (state == GLUT_DOWN) {
 			if (paused) {
-				std::cout << x << " " << y << "\n";
 				if (x > width/4.7 && y > height/4 && x <width/1.23 && y < height/2.85) {
 					//newgame region
 					gameTime = 30;
 					score = 0;
 					paused = false;
 					started = false;
+					gameEnded = false;
 				}
 				if (x > width / 4.7 && y > height / 2 && x < width / 1.48 && y < height / 1.66) {
 					//resume
@@ -1386,8 +1404,6 @@ int main(int argc, char** argv) {
 	glLoadIdentity();
 	gluPerspective(100, (double)width / height, 0.1, zFar);
 	glMatrixMode(GL_MODELVIEW);
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile("f1car.fbx",aiProcess_Triangulate | aiProcess_FlipUVs);
 	
 	for (int i = 0; i < numOfRobots; i++) {
 		robotHit[i] = false;
@@ -1417,7 +1433,7 @@ int main(int argc, char** argv) {
 		<< "F4: toggle shading modw between flat\n"
 		<< "L: togle diffuse light or point light\n"
 		<< "ESC: bring up pause menu\n"
-		<< "LASTLY: Observe imported 3d model at 0, 0, 0\n\n"
+		<< "LASTLY: i unfortunately could not get the imported 3d model working. im sorry.\n\n"
 
 
 		<< "GENERAL CONTROLLS: (press or hold)\n"
