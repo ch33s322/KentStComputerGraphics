@@ -841,9 +841,7 @@ void handleCamera() {
 	int width = glutGet(GLUT_WINDOW_WIDTH);
 	int height = glutGet(GLUT_WINDOW_HEIGHT);
 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(100, (double)width / height, 0.1, zFar);
+	
 	glMatrixMode(GL_MODELVIEW);
 	if (cameraMode1) {
 		cameraLookX = 1 * sin(phi) * cos(theta);
@@ -851,6 +849,11 @@ void handleCamera() {
 		cameraLookY = 1 * cos(phi);
 		// MAIN VIEWPORT
 		glViewport(0, 0, width, (height * 7/8));  // (x, y, w, h)
+		glLoadIdentity();
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(100, (double)width / height, 0.1, zFar);
+		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		gluLookAt(cameraX, cameraY, cameraZ, cameraLookX + cameraX, cameraLookY + cameraY, cameraLookZ + cameraZ, 0.0, 1.0, 0.0);
 		declareModels();
@@ -872,6 +875,7 @@ void handleCamera() {
 		gluLookAt(1, 25, 1, 0, 0, 0, 0, 1, 0);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
+		
 		declareModels();
 		
 
@@ -891,9 +895,14 @@ void handleCamera() {
 		cameraX = cameraRadius * sin(phi) * cos(theta);
 		cameraZ = cameraRadius * sin(phi) * sin(theta);
 		cameraY = cameraRadius * cos(phi);
-
+		
 		glLoadIdentity();
 		glViewport(0, 0, width, height);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(100, (double)width / height, 0.1, zFar);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
 		gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
 		declareModels();
 	}
@@ -1207,7 +1216,7 @@ void processSpecialKeys(int key, int x, int y) {
 
 				cameraLookX = 1;
 				cameraLookY = 0;
-				cameraLookZ = 0;
+				cameraLookZ = 1;
 			}
 			else if (cameraMode4) {
 				phi = 3.14 / 4;
